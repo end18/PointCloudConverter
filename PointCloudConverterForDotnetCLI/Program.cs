@@ -4,7 +4,6 @@ using PointCloudConverterForDotnetCLI.Structs;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows;
 using Color = PointCloudConverterForDotnetCLI.Structs.Color;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
@@ -413,19 +412,7 @@ async Task ProcessAllFiles(object workerParamsObject)
     lastStatusMessage = "Done!";
     Console.ForegroundColor = ConsoleColor.Green;
     Log.Write("Finished!");
-    Console.ForegroundColor = ConsoleColor.White;    
-        
-    var dir = Path.GetDirectoryName(importSettings.outputFile);
-    if (Directory.Exists(dir))
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = dir,
-            UseShellExecute = true,
-            Verb = "open"
-        };
-        Process.Start(psi);
-    }    
+    Console.ForegroundColor = ConsoleColor.White;       
 
     stopwatch.Stop();
     Log.Write("Elapsed: " + (TimeSpan.FromMilliseconds(stopwatch.ElapsedMilliseconds)).ToString(@"hh\h\ mm\m\ ss\s\ ms\m\s"));

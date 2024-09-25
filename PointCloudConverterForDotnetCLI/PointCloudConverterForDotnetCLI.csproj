@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ContainerRepository>PointCloudConvDotnet</ContainerRepository>
+    <Configurations>Debug;Release;LinuxRelease</Configurations>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:8.0</ContainerBaseImage>
   </PropertyGroup>
 
   <ItemGroup>
