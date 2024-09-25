@@ -331,6 +331,7 @@ namespace PointCloudConverterForDotnetCLI.Writers
                 }
             }
 
+            /*
             // combine files using commandline binary append
             string args = "";
             if (importSettings.packColors == true)
@@ -347,8 +348,34 @@ namespace PointCloudConverterForDotnetCLI.Writers
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             proc.Start();
             proc.WaitForExit();
+            */
+            FileInfo ucpcfi = new FileInfo(outputFile);
+            if( ucpcfi.Exists )
+            {
+                ucpcfi.Delete();
+                ucpcfi.Create();
+            }
+            using (FileStream fs = ucpcfi.OpenWrite())
+            {
+                if (importSettings.packColors == true)
+                {
+                    FileInfo ucpcheaderfi = new FileInfo(headerTempFile);
+                    FileInfo ucpcpointfi = new FileInfo(pointsTempFile);
+                    ucpcheaderfi.Open(FileMode.Open).CopyTo(fs);
+                    ucpcpointfi.Open(FileMode.Open).CopyTo(fs);
+                }
+                else
+                {
+                    FileInfo ucpcheaderfi = new FileInfo(headerTempFile);
+                    FileInfo ucpcpointfi = new FileInfo(pointsTempFile);
+                    FileInfo ucpccolorfi = new FileInfo(colorsTempFile);
+                    ucpcheaderfi.Open(FileMode.Open).CopyTo(fs);
+                    ucpcpointfi.Open(FileMode.Open).CopyTo(fs);
+                    ucpccolorfi.Open(FileMode.Open).CopyTo(fs);
+                }
+            }
 
-            Log.Write("Deleting temporary files: " + Path.GetFileName(headerTempFile) + "," + Path.GetFileName(pointsTempFile) + "," + Path.GetFileName(colorsTempFile));
+                Log.Write("Deleting temporary files: " + Path.GetFileName(headerTempFile) + "," + Path.GetFileName(pointsTempFile) + "," + Path.GetFileName(colorsTempFile));
             if (File.Exists(headerTempFile)) File.Delete(headerTempFile);
             if (File.Exists(pointsTempFile)) File.Delete(pointsTempFile);
             if (File.Exists(colorsTempFile)) File.Delete(colorsTempFile);
