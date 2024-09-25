@@ -26,6 +26,8 @@ namespace PointCloudConverterForDotnetCLI.Writers
 
         int pointCount;
 
+        List<bool> CleanupIndex = new List<bool>();
+
         BufferedStream bsPoints = null;
         BinaryWriter writerPoints = null;
         BufferedStream bsColorsV2 = null;
@@ -49,6 +51,9 @@ namespace PointCloudConverterForDotnetCLI.Writers
         bool IWriter.InitWriter(dynamic _importSettings, int _pointCount, ILogger logger)
         {
             importSettings = (ImportSettings)(object)_importSettings;
+            foreach(var itetm in importSettings.inputFiles)
+                CleanupIndex.Add(false);
+
             Log = logger;
 
             pointCount = _pointCount;
@@ -196,13 +201,12 @@ namespace PointCloudConverterForDotnetCLI.Writers
 
             // create new file on top, NOTE seek didnt work?
             bsPoints = new BufferedStream(new FileStream(pointsTempFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
-            writerPoints = new BinaryWriter(bsPoints);
-
+            writerPoints = new BinaryWriter(bsPoints);            
             // TODO why not use writeallbytes?
             for (int i = 0; i < pointCount * 3; i++)
             {
                 writerPoints.Write(tempFloats[i]);
-            }
+            }            
 
             if (importSettings.packColors == true)
             {
@@ -286,6 +290,9 @@ namespace PointCloudConverterForDotnetCLI.Writers
 
         void IWriter.Cleanup(int fileIndex)
         {
+            if (CleanupIndex[fileIndex])
+                return;
+
             if (importSettings.packColors == true)
             {
                 Log.Write("Combining files: " + Path.GetFileName(headerTempFile) + "," + Path.GetFileName(pointsTempFile));
@@ -309,9 +316,9 @@ namespace PointCloudConverterForDotnetCLI.Writers
             var sep = '"';
 
             // fix slashes, forward slashes fail in command prompt too
-            headerTempFile = headerTempFile.Replace("/", "\\");
-            pointsTempFile = pointsTempFile.Replace("/", "\\");
-            colorsTempFile = colorsTempFile.Replace("/", "\\");
+            headerTempFile = headerTempFile.Replace("\\", "/");
+            pointsTempFile = pointsTempFile.Replace("\\", "/");
+            colorsTempFile = colorsTempFile.Replace("\\", "/");
 
             string outputFile = "";
             if (Directory.Exists(importSettings.outputFile)) // its output folder, take filename from source
@@ -349,36 +356,54 @@ namespace PointCloudConverterForDotnetCLI.Writers
             proc.Start();
             proc.WaitForExit();
             */
+            Log.Write($"outputFile : {outputFile}");
+            Log.Write($"headerTempFile : {headerTempFile}");
+            Log.Write($"pointsTempFile : {pointsTempFile}");
+            Log.Write($"colorsTempFile : {colorsTempFile}");
+
             FileInfo ucpcfi = new FileInfo(outputFile);
             if( ucpcfi.Exists )
             {
-                ucpcfi.Delete();
-                ucpcfi.Create();
-            }
+                Log.Write($"ucpcfi : Delete File");
+                ucpcfi.Delete();                
+            }            
             using (FileStream fs = ucpcfi.OpenWrite())
             {
                 if (importSettings.packColors == true)
                 {
-                    FileInfo ucpcheaderfi = new FileInfo(headerTempFile);
-                    FileInfo ucpcpointfi = new FileInfo(pointsTempFile);
+                    FileInfo ucpcheaderfi = new(headerTempFile);
+                    FileInfo ucpcpointfi = new(pointsTempFile);
+
+                    Log.Write($"ucpcfi : {ucpcfi.Exists}");
+                    Log.Write($"ucpcheaderfi : {ucpcheaderfi.Exists}");
+                    Log.Write($"ucpcpointfi : {ucpcpointfi.Exists}");
+
                     ucpcheaderfi.Open(FileMode.Open).CopyTo(fs);
                     ucpcpointfi.Open(FileMode.Open).CopyTo(fs);
                 }
                 else
                 {
-                    FileInfo ucpcheaderfi = new FileInfo(headerTempFile);
-                    FileInfo ucpcpointfi = new FileInfo(pointsTempFile);
-                    FileInfo ucpccolorfi = new FileInfo(colorsTempFile);
+                    FileInfo ucpcheaderfi = new(headerTempFile);
+                    FileInfo ucpcpointfi = new(pointsTempFile);
+                    FileInfo ucpccolorfi = new(colorsTempFile);
+
+                    Log.Write($"ucpcfi : {ucpcfi.Exists}");
+                    Log.Write($"ucpcheaderfi : {ucpcheaderfi.Exists}");
+                    Log.Write($"ucpcpointfi : {ucpcpointfi.Exists}");
+                    Log.Write($"ucpccolorfi : {ucpccolorfi.Exists}");
+
                     ucpcheaderfi.Open(FileMode.Open).CopyTo(fs);
                     ucpcpointfi.Open(FileMode.Open).CopyTo(fs);
                     ucpccolorfi.Open(FileMode.Open).CopyTo(fs);
                 }
             }
 
-                Log.Write("Deleting temporary files: " + Path.GetFileName(headerTempFile) + "," + Path.GetFileName(pointsTempFile) + "," + Path.GetFileName(colorsTempFile));
+            Log.Write("Deleting temporary files: " + Path.GetFileName(headerTempFile) + "," + Path.GetFileName(pointsTempFile) + "," + Path.GetFileName(colorsTempFile));
             if (File.Exists(headerTempFile)) File.Delete(headerTempFile);
             if (File.Exists(pointsTempFile)) File.Delete(pointsTempFile);
             if (File.Exists(colorsTempFile)) File.Delete(colorsTempFile);
+
+            CleanupIndex[fileIndex] = true;
         }
 
         void IWriter.Close()
